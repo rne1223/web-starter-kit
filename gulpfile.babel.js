@@ -1,28 +1,4 @@
-/**
- *
- *  Web Starter Kit
- *  Copyright 2015 Google Inc. All rights reserved.
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License
- *
- */
-
 'use strict';
-
-// This gulpfile makes use of new JavaScript features.
-// Babel handles this without us having to do anything. It just works.
-// You can read more about the new JavaScript features here:
-// https://babeljs.io/docs/learn-es2015/
 
 import path from 'path';
 import gulp from 'gulp';
@@ -84,13 +60,13 @@ gulp.task('styles', () => {
 
     // For best performance, don't add Sass partials to `gulp.src`
     return gulp.src([
-        'app/styles/**/*.sass',
         'app/styles/**/*.scss',
         'app/styles/**/*.css'
     ])
         .pipe($.newer('.tmp/styles'))
         .pipe($.sourcemaps.init())
         .pipe($.sass({
+            indentedSyntax: true,
             precision: 10
         }).on('error', $.sass.logError))
         .pipe($.autoprefixer(AUTOPREFIXER_BROWSERS))
@@ -99,20 +75,13 @@ gulp.task('styles', () => {
         .pipe($.if('*.css', $.cssnano()))
         .pipe($.size({title: 'styles'}))
         .pipe($.sourcemaps.write('./'))
-        .pipe(gulp.dest('dist/styles'));
+        .pipe(gulp.dest('dist/styles'))
+        .pipe(gulp.dest('.tmp/styles'));
 });
 
-// Concatenate and minify JavaScript. Optionally transpiles ES2015 code to ES5.
-// to enable ES2015 support remove the line `"only": "gulpfile.babel.js",` in the
-// `.babelrc` file.
 gulp.task('scripts', () =>
     gulp.src([
-        // Note: Since we are not using useref in the scripts build pipeline,
-        //       you need to explicitly list your scripts here in the right order
-        //       to be correctly concatenated
-        './app/scripts/main.js',
-        './app/scripts/sketch.js'
-        // Other scripts
+        './app/scripts/main.js'
     ])
         .pipe($.newer('.tmp/scripts'))
         .pipe($.sourcemaps.init())
@@ -125,11 +94,18 @@ gulp.task('scripts', () =>
         .pipe($.size({title: 'scripts'}))
         .pipe($.sourcemaps.write('.'))
         .pipe(gulp.dest('dist/scripts'))
+        .pipe(gulp.dest('.tmp/scripts'))
 );
 
+gulp.task('pug', () => {
+    return gulp.src('app/templates/**/*.pug')
+        .pipe($.pug())
+    // Output files
+        .pipe(gulp.dest('app'));
+});
 
 // Scan your HTML for assets & optimize them
-gulp.task('html', () => {
+gulp.task('html',['pug'], () => {
     return gulp.src('app/**/*.html')
         .pipe($.useref({
             searchPath: '{.tmp,app}',
@@ -153,20 +129,12 @@ gulp.task('html', () => {
         .pipe(gulp.dest('dist'));
 });
 
-// Compile Pug templates
-gulp.task('views', () => {
-    gulp.src([
-        'app/views/**/*.pug'
-    ])
-    .pipe($.pug())
-    .pipe(gulp.dest('app'))
-});
 
 // Clean output directory
 gulp.task('clean', () => del(['.tmp', 'dist/*', '!dist/.git'], {dot: true}));
 
 // Watch files for changes & reload
-gulp.task('serve', ['scripts', 'styles'], () => {
+gulp.task('serve', ['scripts', 'styles','pug'], () => {
     browserSync({
         notify: false,
         // Customize the Browsersync console logging prefix
@@ -176,14 +144,14 @@ gulp.task('serve', ['scripts', 'styles'], () => {
         // Run as an https by uncommenting 'https: true'
         // Note: this uses an unsigned certificate which on first access
         //       will present a certificate warning in the browser.
-        //https: true,
+        // https: true,
         server: ['.tmp', 'app'],
         port: 3000
     });
 
     gulp.watch(['app/**/*.html'], reload);
-    gulp.watch(['app/styles/**/*.{sass,scss,css}'], ['styles', reload]);
-    gulp.watch(['app/views/**/*.pug'], ['views', 'html', reload]);
+    gulp.watch(['app/templates/**/*.pug'], ['pug', reload]);
+    gulp.watch(['app/styles/**/*.{scss,css}'], ['styles', reload]);
     gulp.watch(['app/scripts/**/*.js'], ['lint', 'scripts', reload]);
     gulp.watch(['app/images/**/*'], reload);
 });
@@ -208,7 +176,7 @@ gulp.task('serve:dist', ['default'], () =>
 gulp.task('default', ['clean'], cb =>
     runSequence(
         'styles',
-        ['lint','views','html', 'scripts', 'images', 'copy'],
+        ['lint', 'html', 'scripts', 'images', 'copy'],
         'generate-service-worker',
         cb
     )
@@ -216,7 +184,7 @@ gulp.task('default', ['clean'], cb =>
 
 // Run PageSpeed Insights
 gulp.task('pagespeed', cb =>
-    // Update the below URL to the public URL of your site
+   // Update the below URL to the public URL of your site
     pagespeed('example.com', {
         strategy: 'mobile'
         // By default we use the PageSpeed Insights free (no API key) tier.
@@ -262,6 +230,6 @@ gulp.task('generate-service-worker', ['copy-sw-scripts'], () => {
   });
 });
 
-// Load custom tasks from the `tasks` directory
-// Run: `npm install --save-dev require-dir` from the command-line
-// try { require('require-dir')('tasks'); } catch (err) { console.error(err); }
+            // Load custom tasks from the `tasks` directory
+            // Run: `npm install --save-dev require-dir` from the command-line
+            // try { require('require-dir')('tasks'); } catch (err) { console.error(err); }
